@@ -154,7 +154,8 @@ public class WindowTest {
 
             // Compute J based on Counts
             int j = c11 - c12 - c21 - c22;
-            String st = window + ", " + c11 + ", " + c12 + ", " + c21 + ", " + c22 + ", " + j+", "+(j/(c11+c12+c22+c21));
+            double norm = (double)j/(double)(c11+c12+c22+c21);
+            String st = window + ", " + c11 + ", " + c12 + ", " + c21 + ", " + c22 + ", " + j+", "+norm;
             out += st + "\n";
             p(st);
         }
