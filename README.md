@@ -14,7 +14,7 @@ So if the window size is 5, and we are counting c12 it would check "trials" 1 -5
 registered, it is counted as an event. (Double counts are discarded, but it also works if they are left in)
 - Compute the resulting c11 - c12 - c21 - c22 (=j)
 - Based on the probabilities alone, J should be negative (they are chosen such that J should be negative)
-- For some time windows, J however is clearly positive (not just a little bit :-)
+- J varies considerably based on the window size
 
 References:
 - https://arxiv.org/abs/1507.06231
@@ -36,7 +36,6 @@ java -jar Coincidences.jar  (all default values)
 It generates a file streams.csv with the angles and all the counts.
 (See example in folder)
 
-![Example Result](https://github.com/chenopodium/Coincidences/blob/master/windows.png)
 
 From Jan-Åke (forum discussion):
 "Christensen et al is pulsed, Giustina et al uses a continuous pump.
