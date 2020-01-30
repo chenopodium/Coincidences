@@ -49,43 +49,50 @@ public class WindowTest {
 
     public WindowTest() {
         rnd = new Random();
-        // Default random seed, can be overwritten via arguments
+        // Default random seed, can be overwritten via arguments in main
         rnd.setSeed(1234);
     }
 
     /* Simply count the nr of coincidences of A and B using FIXED windows */
-    public int countCoincidences(int window) {
+    public int countCoincidences(int windowSize) {
         int count = 0;
 
-        for (int startOfWindow = 0; startOfWindow + window < nrtrials; startOfWindow += window) {
+        for (int startOfWindow = 0; startOfWindow + windowSize < nrtrials; startOfWindow += windowSize) {
             int position = startOfWindow;
-            boolean aDetected = false;
-            boolean bDetected = false;
-            for (int i = 0; i < window; i++) {
+            int aDetected = 0;
+            int bDetected = 0;
+            for (int i = 0; i < windowSize; i++) {
                 if (deta[position + i]) {
-                    aDetected = true;
+                    aDetected++;
                 }
                 if (detb[position + i]) {
-                    bDetected = true;
+                    bDetected++;
                 }
-                if (aDetected && bDetected) {
-                    count++;
-                    break;
-                }
+            }
+            // we discard double counts - only if each window has one count it is considered valid
+            if (aDetected == 1 && bDetected == 1) {
+                count++;
             }
         }
         return count;
     }
 
-    /* Create a stream of detection events based on the probability p and the efficiency. 
+    /* Create a stream of detection events based on the detector angle detAngle and the efficiency. 
     Use a normal distribution to determine the probability to detect something */
-    private boolean[] createDetectionStream(double p) {
+    private boolean[] createDetectionStream(double detAngle) {
         boolean[] det = new boolean[nrtrials];
-        double every = 1.0 / p;
+
         for (int i = 0; i < nrtrials; i++) {
-            double dist = i % (int) every;
-            double prob = p * pdf(dist, 0, 2);
-            det[i] = rnd.nextDouble() < prob * efficiency;
+            double photonAngle = 0; // hidden variable
+            double delta = (photonAngle + detAngle);
+            double p = Math.cos(delta) * efficiency;
+
+            if (p > 0) {
+                double every = 1.0 / p; // mean distance between detection events, rounded to int
+                double dist = i % (int) every; // current distance to next likely detection event
+                double prob = p * pdf(dist, 0, 2); // normal distribution around that position
+                det[i] = rnd.nextDouble() < prob;
+            }
         }
         return det;
     }
@@ -104,52 +111,52 @@ public class WindowTest {
         double p21 = pa2 * pb1;
 
         double jloc = p11 - p22 - p21 - p12;
-        
+
+        /* The detector angles */
+        double a1 = Math.acos(pa1);
+        double a2 = Math.acos(pa2);
+        double b1 = Math.acos(pb1);
+        double b2 = Math.acos(pb2);
+
         String out = ("angles (degrees), a1, a2, b1, b2");
-        out += ("\n, " + round(Math.toDegrees(Math.acos(pa1)), 2) + "," + round(Math.toDegrees(Math.acos(pa2)), 2)
-                + "angles (degrees), " + round(Math.toDegrees(Math.acos(pb1)), 2) + ", " + round(Math.toDegrees(Math.acos(pb2)), 2));
-        out += ("\n\np(detection), pa1, pa2, pb1, pb2");
+        out += ",,,efficiency, " + efficiency;
+        out += "\n, " + round(Math.toDegrees(a1), 2) + "," + round(Math.toDegrees(a2), 2)
+                + ", " + round(Math.toDegrees(b1), 2) + ", " + round(Math.toDegrees(b2), 2);
+        out += ",,,nr trials, " + nrtrials;
         out += ("\np(detection), " + pa1 + ", " + pa2 + ", " + pb1 + ", " + pb2);
-
-        out += ("\n\np(coinc), p11, p12, p21, p22");
-        out += ("\n, " + round(p11, 4) + ", " + round(p12, 4) + ", " + round(pb1, 4) + ", " + round(p22, 4));
-
-        out += ("\n\np11 - p12 - p21 - p22 = " + round(jloc, 4));
-        out += ("\n" + round(p11, 4) + " - " + round(p12, 4) + " - " + round(p12, 4) + " - " + round(p22, 4) + " = " + round(jloc, 4));
-        out += "\nefficiency, " + efficiency;
-        out += "\nnr trials, " + nrtrials;
-
+        out += "\np(coinc), p11, p12, p21, p22";
+        out += "\n, " + round(p11, 4) + ", " + round(p12, 4) + ", " + round(pb1, 4) + ", " + round(p22, 4);
+        out += "\n\np11 - p12 - p21 - p22 = " + round(jloc, 4);
+        out += "\n" + round(p11, 4) + " - " + round(p12, 4) + " - " + round(p12, 4) + " - " + round(p22, 4) + " = " + round(jloc, 4);
         out += "\n\nwindow size, c11, c12, c21, c22, j\n";
 
         p(out);
-        for (int window = 1; window < 200; window += 1) {
+        for (int window = 1; window < 1200; window += 20) {
 
             // Detection stream and counts for A1 B1
-            deta = createDetectionStream(pa1);
-            detb = createDetectionStream(pb1);
+            deta = createDetectionStream(a1);
+            detb = createDetectionStream(b1);
             int c11 = countCoincidences(window);
 
             // Detection stream and counts for A2 B2
-            deta = createDetectionStream(pa2);
-            detb = createDetectionStream(pb2);
+            deta = createDetectionStream(a2);
+            detb = createDetectionStream(b2);
             int c22 = countCoincidences(window);
 
             // Detection stream and counts for A1 B2
-            deta = createDetectionStream(pa1);
-            detb = createDetectionStream(pb2);
+            deta = createDetectionStream(a1);
+            detb = createDetectionStream(b2);
             int c12 = countCoincidences(window);
 
             // Detection stream and counts for A2 B1
-            deta = createDetectionStream(pa2);
-            detb = createDetectionStream(pb1);
+            deta = createDetectionStream(a2);
+            detb = createDetectionStream(b1);
             int c21 = countCoincidences(window);
 
             // Compute J based on Counts
             int j = c11 - c12 - c21 - c22;
             String st = window + ", " + c11 + ", " + c12 + ", " + c21 + ", " + c22 + ", " + j;
             out += st + "\n";
-
-            // Note: import the file in Excel to plot
             p(st);
         }
         writeStringToFile(new File("stream.csv"), out, false);
@@ -159,8 +166,8 @@ public class WindowTest {
     /* Read arguments */
     public static void main(String[] args) {
         WindowTest s = new WindowTest();
-        long seed = 1234;
-        int trials = 10000000;
+        long seed = 555;
+        int trials = 1000000;
         double efficiency = 0.1;
         if (args != null && args.length > 1) {
             for (int i = 0; i + 1 < args.length; i += 2) {
@@ -199,7 +206,6 @@ public class WindowTest {
 
     }
 
-    
     private static void p(String s) {
         System.out.println(s);
 
@@ -242,6 +248,7 @@ public class WindowTest {
     private static double pdf(double x, double mu, double sigma) {
         return pdf((x - mu) / sigma) / sigma;
     }
+
     // Helper method for standard Gaussian pdf
     private static double pdf(double x) {
         return Math.exp(-x * x / 2) / Math.sqrt(2 * Math.PI);
