@@ -5,7 +5,7 @@ The purpose of this simulation is to check if a local realistic model can break 
 This simulation just focuses on the coincidence "loophole", but not using some "cheap" trick. The goal is to do something similar as is 
 done in the experiment.
   
-Based on Jan-Ake, the experiment used fixed time windows, so this simulation is doing the same.
+Based on Jan-Åke, the experiment used fixed time windows, so this simulation is doing the same.
 
 In this simplified version, all that is done is:
 - generate a stream of detection events for each setting a1, a2, b1, b2 based on the probability determined by the angle (cos(angle))
