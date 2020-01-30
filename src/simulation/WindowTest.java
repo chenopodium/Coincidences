@@ -46,6 +46,7 @@ public class WindowTest {
 
     int nrtrials;
     double efficiency;
+    int uncertainty;
 
     public WindowTest() {
         rnd = new Random();
@@ -88,9 +89,13 @@ public class WindowTest {
             double p = Math.cos(delta) * efficiency;
 
             if (p > 0) {
-                double expectedDistance = 1.0 / p; // mean distance between detection events
-                double relativeDistance = i % (int) expectedDistance; // current distance to next likely detection event
-                double prob = p * pdf(relativeDistance, 0, 2); // normal distribution around that position
+                double prob = p;
+                if (uncertainty > 0) {
+                    double expectedDistance = 1.0 / p; // mean distance between detection events
+                    double relativeDistance = i % (int) expectedDistance; // current distance to next likely detection event
+                    relativeDistance= Math.min(Math.abs(expectedDistance-relativeDistance), relativeDistance);;
+                    prob = prob * pdf(relativeDistance, 0, uncertainty);                  
+                } // normal distribution around that position
                 det[i] = rnd.nextDouble() < prob;
             }
         }
@@ -123,14 +128,15 @@ public class WindowTest {
         out += "\n, " + round(Math.toDegrees(a1), 2) + "," + round(Math.toDegrees(a2), 2)
                 + ", " + round(Math.toDegrees(b1), 2) + ", " + round(Math.toDegrees(b2), 2);
         out += ",,,nr trials, " + nrtrials;
-        out += ("\np(detection), " + pa1 + ", " + pa2 + ", " + pb1 + ", " + pb2);
+        out += "\np(detection), " + pa1 + ", " + pa2 + ", " + pb1 + ", " + pb2;
+        out += ",,,uncertainty, " + uncertainty;
         out += "\np(coinc), p11, p12, p21, p22";
         out += "\n, " + round(p11, 4) + ", " + round(p12, 4) + ", " + round(pb1, 4) + ", " + round(p22, 4);
         out += "\n\np11 - p12 - p21 - p22 = " + round(jloc, 4);
         out += "\n" + round(p11, 4) + " - " + round(p12, 4) + " - " + round(p12, 4) + " - " + round(p22, 4) + " = " + round(jloc, 4);
         out += "\n\nwindow size, c11, c12, c21, c22, J, J/counts\n";
         p(out);
-        
+
         for (int window = 1; window < 1200; window += 20) {
             // Detection stream and counts for A1 B1
             deta = createDetectionStream(a1);
@@ -154,12 +160,12 @@ public class WindowTest {
 
             // Compute J based on Counts
             int j = c11 - c12 - c21 - c22;
-            double norm = (double)j/(double)(c11+c12+c22+c21);
-            String st = window + ", " + c11 + ", " + c12 + ", " + c21 + ", " + c22 + ", " + j+", "+norm;
+            double norm = (double) j / (double) (c11 + c12 + c22 + c21);
+            String st = window + ", " + c11 + ", " + c12 + ", " + c21 + ", " + c22 + ", " + j + ", " + norm;
             out += st + "\n";
             p(st);
         }
-        writeStringToFile(new File("stream.csv"), out, false);
+        writeStringToFile(new File("stream_u"+uncertainty+"_e"+efficiency+".csv"), out, false);
         p(out);
     }
 
@@ -167,8 +173,9 @@ public class WindowTest {
     public static void main(String[] args) {
         WindowTest s = new WindowTest();
         long seed = 555;
-        int trials = 10000000;
+        int trials = 1000000;
         double efficiency = 0.1;
+        int uncertainty = 2;
         if (args != null && args.length > 1) {
             for (int i = 0; i + 1 < args.length; i += 2) {
                 String key = args[i].toUpperCase();
@@ -194,6 +201,12 @@ public class WindowTest {
                     } catch (Exception ex) {
                         p("Could not convert " + value + " to int. Try something like 0.1");
                     }
+                } else if (key.startsWith("U")) {
+                    try {
+                        uncertainty = Integer.parseInt(value);
+                    } catch (Exception ex) {
+                        p("Could not convert " + value + " to int. Try something like 2");
+                    }
                 }
 
             }
@@ -201,6 +214,7 @@ public class WindowTest {
         }
         s.nrtrials = trials;
         s.efficiency = efficiency;
+        s.uncertainty = uncertainty;
         rnd.setSeed(seed);
         s.simpleWindowTest();
 
