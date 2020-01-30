@@ -17,18 +17,18 @@ registered, it is counted as an event. (Double counts are discarded, but it also
 - For some time windows, J however is clearly positive (not just a little bit :-)
 
 References:
-https://arxiv.org/abs/1507.06231
-https://arxiv.org/pdf/1309.0712.pdf
-https://arxiv.org/abs/1511.03190
-http://boydnlo.ca/rochesterarchive/www2.optics.rochester.edu/workgroups/boyd/archive/Quantum%20Imaging/Assets/papers/2009%20Barbosa%20Phys%20Rev%20A%20-%20Wave%20function%20for%20spontaneous%20parametric.pdf
-http://www.askingwhy.org/blog/first-puzzle-just-a-probability/puzzle-piece-6-disentangling-the-entanglement/
-Forum: https://groups.google.com/forum/?utm_medium=email&utm_source=footer#!msg/bell_quantum_foundations/
-
+- https://arxiv.org/abs/1507.06231
+- https://arxiv.org/pdf/1309.0712.pdf
+- https://arxiv.org/abs/1511.03190
+- http://boydnlo.ca/rochesterarchive/www2.optics.rochester.edu/workgroups/boyd/archive/Quantum%20Imaging/Assets/papers/2009%20Barbosa%20Phys%20Rev%20A%20-%20Wave%20function%20for%20spontaneous%20parametric.pdf
+- http://www.askingwhy.org/blog/first-puzzle-just-a-probability/puzzle-piece-6-disentangling-the-entanglement/
+- Forum: https://groups.google.com/forum/?utm_medium=email&utm_source=footer#!msg/bell_quantum_foundations/
+- Donald Graft: https://pubpeer.com/publications/E0F8384FC19A6034E86D516D03BB38#fb21323
 
 
 *Arguments:*
--seed seed: the random seed (a number like 12346). The default is 1234
--trials nr trials: the number of pairs that are generated (default is 100000) (This is plenty... larger values just make it slower)
+- seed seed: the random seed (a number like 12346). The default is 1234
+- trials nr trials: the number of pairs that are generated (default is 100000) (This is plenty... larger values just make it slower)
 
 *Examples:*
 java -jar Coincidences.jar  (all default values)
@@ -37,7 +37,7 @@ It generates a file streams.csv with the angles and all the counts.
 (See example in folder)
 
 
-From Jan-Ake:
+From Jan-Åke (forum discussion):
 "Christensen et al is pulsed, Giustina et al uses a continuous pump.
 The timing jitter of the TES detectors was reported by Christensen et al to be 500 ns, so therefore they used 1 us coincidence window. I seem to remember that the jitter in Vienna was less than that.
 For the Vienna experiment we did an extended analysis in "Bell-inequality violation with entangled photons, free of the coincidence-time loophole",
