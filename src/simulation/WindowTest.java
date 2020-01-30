@@ -128,11 +128,10 @@ public class WindowTest {
         out += "\n, " + round(p11, 4) + ", " + round(p12, 4) + ", " + round(pb1, 4) + ", " + round(p22, 4);
         out += "\n\np11 - p12 - p21 - p22 = " + round(jloc, 4);
         out += "\n" + round(p11, 4) + " - " + round(p12, 4) + " - " + round(p12, 4) + " - " + round(p22, 4) + " = " + round(jloc, 4);
-        out += "\n\nwindow size, c11, c12, c21, c22, j\n";
-
+        out += "\n\nwindow size, c11, c12, c21, c22, J, J/counts\n";
         p(out);
+        
         for (int window = 1; window < 1200; window += 20) {
-
             // Detection stream and counts for A1 B1
             deta = createDetectionStream(a1);
             detb = createDetectionStream(b1);
@@ -155,7 +154,7 @@ public class WindowTest {
 
             // Compute J based on Counts
             int j = c11 - c12 - c21 - c22;
-            String st = window + ", " + c11 + ", " + c12 + ", " + c21 + ", " + c22 + ", " + j;
+            String st = window + ", " + c11 + ", " + c12 + ", " + c21 + ", " + c22 + ", " + j+", "+(j/(c11+c12+c22+c21));
             out += st + "\n";
             p(st);
         }
@@ -167,7 +166,7 @@ public class WindowTest {
     public static void main(String[] args) {
         WindowTest s = new WindowTest();
         long seed = 555;
-        int trials = 1000000;
+        int trials = 10000000;
         double efficiency = 0.1;
         if (args != null && args.length > 1) {
             for (int i = 0; i + 1 < args.length; i += 2) {
