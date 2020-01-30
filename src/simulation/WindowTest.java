@@ -55,7 +55,7 @@ public class WindowTest {
     }
 
     /* Simply count the nr of coincidences of A and B using FIXED windows */
-    public int countCoincidences(int windowSize) {
+    public int countCoincidences(int windowSize, int a, int b) {
         int count = 0;
 
         for (int startOfWindow = 0; startOfWindow + windowSize < nrtrials; startOfWindow += windowSize) {
@@ -71,7 +71,7 @@ public class WindowTest {
                 }
             }
             // we discard double counts - only if each window has one count it is considered valid
-            if (aDetected == 1 && bDetected == 1) {
+            if (aDetected == a && bDetected == b) {
                 count++;
             }
         }
@@ -104,16 +104,16 @@ public class WindowTest {
 
     private void simpleWindowTest() {
         /* We chose probabilities that will lead to J < 0 */
-        double pa1 = 0.8;
-        double pa2 = 0.2;
-        double pb1 = 0.8;
-        double pb2 = 0.5;
+        double pa1 = 0.9;
+        double pa2 = 0.1;
+        double pb1 = 0.5;
+        double pb2 = 0.3;
 
         /* the joint probabilities that determine J */
         double p11 = pa1 * pb1;
         double p22 = pa2 * pb2;
-        double p12 = pa1 * pb2;
-        double p21 = pa2 * pb1;
+        double p12 = (1.0-pa1) * pb2;
+        double p21 = pa2 * (1.0-pb1);
 
         double jloc = p11 - p22 - p21 - p12;
 
@@ -123,7 +123,7 @@ public class WindowTest {
         double b1 = Math.acos(pb1);
         double b2 = Math.acos(pb2);
 
-        String out = ("angles (degrees), a1, a2, b1, b2");
+        String out = "angles (degrees), a1, a2, b1, b2";
         out += ",,,efficiency, " + efficiency;
         out += "\n, " + round(Math.toDegrees(a1), 2) + "," + round(Math.toDegrees(a2), 2)
                 + ", " + round(Math.toDegrees(b1), 2) + ", " + round(Math.toDegrees(b2), 2);
@@ -141,27 +141,28 @@ public class WindowTest {
             // Detection stream and counts for A1 B1
             deta = createDetectionStream(a1);
             detb = createDetectionStream(b1);
-            int c11 = countCoincidences(window);
+            int c11 = countCoincidences(window, 1, 1);
 
             // Detection stream and counts for A2 B2
             deta = createDetectionStream(a2);
             detb = createDetectionStream(b2);
-            int c22 = countCoincidences(window);
+            int c22 = countCoincidences(window, 1, 1);
 
             // Detection stream and counts for A1 B2
             deta = createDetectionStream(a1);
             detb = createDetectionStream(b2);
-            int c12 = countCoincidences(window);
+            int c12 = countCoincidences(window, 0, 1);
 
             // Detection stream and counts for A2 B1
             deta = createDetectionStream(a2);
             detb = createDetectionStream(b1);
-            int c21 = countCoincidences(window);
+            int c21 = countCoincidences(window,1, 0);
 
+           
             // Compute J based on Counts
             int j = c11 - c12 - c21 - c22;
             double norm = (double) j / (double) (c11 + c12 + c22 + c21);
-            String st = window + ", " + c11 + ", " + c12 + ", " + c21 + ", " + c22 + ", " + j + ", " + norm;
+            String st = window + ", " + c11 + ", " + c12 + ", " + c21 + ", " + c22 + ", " + j + ", " + round(norm,5);
             out += st + "\n";
             p(st);
         }
