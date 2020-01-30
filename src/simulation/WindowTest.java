@@ -88,9 +88,9 @@ public class WindowTest {
             double p = Math.cos(delta) * efficiency;
 
             if (p > 0) {
-                double every = 1.0 / p; // mean distance between detection events, rounded to int
-                double dist = i % (int) every; // current distance to next likely detection event
-                double prob = p * pdf(dist, 0, 2); // normal distribution around that position
+                double expectedDistance = 1.0 / p; // mean distance between detection events
+                double relativeDistance = i % (int) expectedDistance; // current distance to next likely detection event
+                double prob = p * pdf(relativeDistance, 0, 2); // normal distribution around that position
                 det[i] = rnd.nextDouble() < prob;
             }
         }
