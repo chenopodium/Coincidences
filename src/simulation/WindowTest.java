@@ -39,14 +39,14 @@ import java.util.Random;
 public class WindowTest {
 
     /* detection events at A and B */
-    boolean[] deta1a; // we record two streams each, since in reality, we cannot reuse any existing measurements
-    boolean[] deta1b;
-    boolean[] detb1a;
-    boolean[] detb1b;
-    boolean[] deta2a;
-    boolean[] detb2a;
-    boolean[] deta2b;
-    boolean[] detb2b;
+    boolean[] deta1_part1; // we record two streams each, since in reality, we cannot reuse any existing measurements
+    boolean[] deta1_part2;
+    boolean[] detb1_part1;
+    boolean[] detb1_part2;
+    boolean[] deta2_part1;
+    boolean[] detb2_part1;
+    boolean[] deta2_part2;
+    boolean[] detb2_part2;
 
     static Random rnd;
 
@@ -66,14 +66,17 @@ public class WindowTest {
     public int countCoincidences(int windowSize, int a, int b, boolean[] deta, boolean[] detb) {
         int count = 0;
 
-        for (int startOfWindow = 0; startOfWindow + windowSize < nrtrials; startOfWindow += windowSize) {
+        if (nrtrials < 500) {
+            showData(deta, detb, windowSize, a, b);
+        }
+
+        for (int startOfWindow = 0; startOfWindow + windowSize <= nrtrials; startOfWindow += windowSize) {
             int position = startOfWindow;
             int aDetected = 0;
             int bDetected = 0;
             for (int i = 0; i < windowSize; i++) {
                 if (deta[position + i]) {
                     aDetected++;
-                    // stop count at 1
                     if (acceptDoubleCounts) {
                         aDetected = Math.min(1, aDetected);
                     }
@@ -90,6 +93,9 @@ public class WindowTest {
                 count++;
             }
         }
+        if (nrtrials < 500) {
+            p("Counts: " + count);
+        }
         return count;
     }
 
@@ -104,14 +110,24 @@ public class WindowTest {
             double p = Math.cos(delta) * efficiency;
 
             if (p > 0) {
-                double prob = p;
-                if (uncertainty > 0) {
-                    double expectedDistance = 1.0 / p; // mean distance between detection events
-                    double relativeDistance = i % (int) expectedDistance; // current distance to next likely detection event
-                    relativeDistance = Math.min(Math.abs(expectedDistance - relativeDistance), relativeDistance);;
-                    prob = prob * pdf(relativeDistance, 0, uncertainty);
+                double expectedDistance = 1.0 / p; // mean distance between detection events
+                double relativeDistance = i % (int) expectedDistance; // current distance to next likely detection event
+                relativeDistance = Math.min(Math.abs(expectedDistance - relativeDistance), relativeDistance);
+                // boolean detected = rnd.nextDouble() < p;
+                boolean detected = relativeDistance < 1;
+
+                if (uncertainty > 0 && detected) {
+
+                    //prob = prob * pdf(relativeDistance, 0, uncertainty);
+                    int dpos = (int) (rnd.nextGaussian() * uncertainty);
+                    int pos = i + dpos;
+                    if (pos >= 0 && pos < nrtrials) {
+                        det[pos] = detected;
+                    }
                 } // normal distribution around that position
-                det[i] = rnd.nextDouble() < prob;
+                else {
+                    det[i] = detected;
+                }
             }
         }
         return det;
@@ -119,17 +135,17 @@ public class WindowTest {
 
     private void simpleWindowTest() {
         /* We chose probabilities that will lead to J < 0 */
-//  0.25, 0.9000000000000002, 0.6, 0.1
-        double pa1 = 0.9;
-        double pa2 = 0.7;
-        double pb1 = 0.4;
-        double pb2 = 0.3;
+
+        double pa1 = 0.85;
+        double pa2 = 0.4;
+        double pb1 = 0.9;
+        double pb2 = 0.1;
 
         /* the joint probabilities that determine J */
-        double p11 = pa1 * pb1;
-        double p22 = pa2 * pb2;
+        double p11 = pa1 * pb1;        
         double p12 = pa1 * (1.0 - pb2);
         double p21 = (1.0 - pa2) * pb1;
+        double p22 = pa2 * pb2;
 
         double jloc = p11 - p22 - p21 - p12;
 
@@ -146,51 +162,61 @@ public class WindowTest {
         out += ",,,nr trials, " + nrtrials;
         out += "\np(detection), " + pa1 + ", " + pa2 + ", " + pb1 + ", " + pb2;
         out += ",,,uncertainty, " + uncertainty;
-        out += "\np(coinc), p11(PP), p12(P0), p21(0P), p22(PP)";
-        out += "\n, " + round(p11, 4) + ", " + round(p12, 4) + ", " + round(pb1, 4) + ", " + round(p22, 4);
-        out += "\n\np11 - p12 - p21 - p22 = " + round(jloc, 4);
-        out += "\n" + round(p11, 4) + " - " + round(p12, 4) + " - " + round(p12, 4) + " - " + round(p22, 4) + " = " + round(jloc, 4);
-        out += "\n\nwindow size, c11 (PP), c12 (P0), c21 (0P), c22 (PP), J, J/counts\n";
+        out += "\nprobability, p11(PP), p12(P0), p21(0P), p22(PP)";
+        out += "\n, " + round(p11, 6) + ", " + round(p12, 6) + ", " + round(p21, 6) + ", " + round(p22, 6);
+        out += "\n\np11 - p12 - p21 - p22 = " + round(jloc, 6);
+        out += "\n" + round(p11, 6) + " - " + round(p12, 6) + " - " + round(p21, 6) + " - " + round(p22, 6) + " = " + round(jloc, 6);
+        out += "\n\nwindow size, c11 (PP), c12 (P0), c21 (0P), c22 (PP), J,,  Total counts, c11 (PP) /counts, c12 (P0)/counts, c21 (0P) /counts, c22 (PP)/counts, J/counts\n";
         p(out);
 
-        deta1a = createDetectionStream(a1);
-        detb1a = createDetectionStream(b1);
-        deta2a = createDetectionStream(a2);
-        detb2a = createDetectionStream(b2);
-        deta1b = createDetectionStream(a1);
-        detb1b = createDetectionStream(b1);
-        deta2b = createDetectionStream(a2);
-        detb2b = createDetectionStream(b2);
+        /* We create multiple parts, because we cannot reuse a measurement in practice!
+         */
+        deta1_part1 = createDetectionStream(a1);
+        deta2_part1 = createDetectionStream(a2);
+        detb1_part1 = createDetectionStream(b1);
+        detb2_part1 = createDetectionStream(b2);
+        deta1_part2 = createDetectionStream(a1);
+        deta2_part2 = createDetectionStream(a2);
+        detb1_part2 = createDetectionStream(b1);
+        detb2_part2 = createDetectionStream(b2);
 
-        int dw = 50;
-        for (int window = 1; window <= 5500; window += dw) {
+        int dw = 1;
+        for (int window = 1; window <= 200; window += dw) {
 
-            int c11 = countCoincidences(window, 1, 1, deta1a, detb1a);
-            int c12 = countCoincidences(window, 1, 0, deta1b, detb2a);
-            int c21 = countCoincidences(window, 0, 1, deta2a, detb1b);
-            int c22 = countCoincidences(window, 1, 1, deta2b, detb2b);
+            if (nrtrials < 200) {
+                p("______________________ WINDOW " + window + " ____________________");
+            }
+            /* We create multiple parts, because we cannot reuse a measurement in practice! */
+            int c11 = countCoincidences(window, 1, 1, deta1_part1, detb1_part1);
+            int c12 = countCoincidences(window, 1, 0, deta1_part2, detb2_part1);
+            int c21 = countCoincidences(window, 0, 1, deta2_part1, detb1_part2);
+            int c22 = countCoincidences(window, 1, 1, deta2_part2, detb2_part2);
 
             // Compute J based on Counts
             int j = c11 - c12 - c21 - c22;
 
-            double norm = (double) j / (double) (c11 + c12 + c22 + c21);
-            String st = window + ", " + c11 + ", " + c12 + ", " + c21 + ", " + c22 + ", " + j + ", " + round(norm, 5);
+            long counts = c11 + c12 + c22 + c21;
+            String st = window + ", " + c11 + ", " + c12 + ", " + c21 + ", " + c22 + ", " + j + ",, " + counts;
+            st += ", " + format(c11, counts) + ", " + format(c12, counts) + ", " + format(c21, counts) + ", " + format(c22, counts) + ", " + format(j, counts);
             out += st + "\n";
             p(st);
         }
-        writeStringToFile(new File("stream_u" + uncertainty + "_e" + efficiency + "_n" + nrtrials + "_a.csv"), out, false);
+        writeStringToFile(new File("stream_u" + uncertainty + "_e" + efficiency + "_n" + nrtrials + "_double_" + acceptDoubleCounts + ".csv"), out, false);
         p(out);
     }
 
-   
+    private double format(long c, long t) {
+        return round((double) c / (double) t, 6);
+    }
+
     /* Read arguments */
     public static void main(String[] args) {
         WindowTest s = new WindowTest();
-      
+
         long seed = 1234;
         int trials = 10000000;
         double efficiency = 0.1;
-        int uncertainty = 3;
+        int uncertainty = 1;
         if (args != null && args.length > 1) {
             for (int i = 0; i + 1 < args.length; i += 2) {
                 String key = args[i].toUpperCase();
@@ -273,14 +299,29 @@ public class WindowTest {
         return (double) tmp / factor;
     }
 
-    //  Helper method for Gaussian pdf with mean mu and stddev sigma
-    private static double pdf(double x, double mu, double sigma) {
-        return pdf((x - mu) / sigma) / sigma;
-    }
-
-    // Helper method for standard Gaussian pdf
-    private static double pdf(double x) {
-        return Math.exp(-x * x / 2) / Math.sqrt(2 * Math.PI);
+    private void showData(boolean[] deta, boolean[] detb, int windowSize, int a, int b) {
+        String sa = "\nA: ";
+        String sb = "\nB: ";
+        String sw = "\nW: ";
+        for (int i = 0; i < nrtrials; i++) {
+            if (deta[i]) {
+                sa += "1";
+            } else {
+                sa += "_";
+            }
+            if (detb[i]) {
+                sb += "1";
+            } else {
+                sb += "_";
+            }
+            if (i % windowSize == 0) {
+                sw += "|";
+            } else {
+                sw += " ";
+            }
+        }
+        String s = "\nWindowSize: " + windowSize + ", Checking for det a: " + a + " det b: " + b;
+        p(s + sa + sb + sw);
     }
 
 }
