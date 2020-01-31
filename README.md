@@ -36,6 +36,7 @@ java -jar Coincidences.jar  (all default values)
 It generates a file streams.csv with the angles and all the counts.
 (See example in folder)
 
+![Example Result](https://github.com/chenopodium/Coincidences/blob/master/windows.png)
 
 From Jan-Åke (forum discussion):
 "Christensen et al is pulsed, Giustina et al uses a continuous pump.
