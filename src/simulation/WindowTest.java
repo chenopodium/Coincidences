@@ -214,7 +214,7 @@ public class WindowTest {
         WindowTest s = new WindowTest();
 
         long seed = 1234;
-        int trials = 100;
+        int trials = 10000000;
         double efficiency = 0.1;
         int uncertainty = 1;
         if (args != null && args.length > 1) {
