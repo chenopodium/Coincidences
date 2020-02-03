@@ -44,12 +44,14 @@ public class WindowMixedTest {
     double efficiency;
     int uncertainty;
     boolean acceptDoubleCounts;
+    double pnoise;
 
     public WindowMixedTest() {
         rnd = new Random();
         // Default random seed, can be overwritten via arguments in main
         rnd.setSeed(1234);
         acceptDoubleCounts = true;
+        pnoise = 0.4;
     }
 
     /* Simply count the nr of coincidences of A and B using FIXED windows */
@@ -91,13 +93,13 @@ public class WindowMixedTest {
 
     /* Create a stream of detection events based on the detector angle detAngle and the efficiency. 
     Use a normal distribution to determine the probability to detect something */
-    private boolean[] createDetectionStream(double detAngle, int nr, long startTime) {
+    private boolean[] createDetectionStream(double detAngle, int nr, long startTime, double eff) {
         boolean[] det = new boolean[nr];
 
         for (int i = 0; i < nr; i++) {
             double photonAngle = 0; // hidden variable
             double delta = (photonAngle + detAngle);
-            double p = Math.cos(delta) * efficiency;
+            double p = Math.cos(delta) * eff;
 
             if (p > 0) {
                 double expectedDistance = 1.0 / p; // mean distance between detection events
@@ -120,15 +122,33 @@ public class WindowMixedTest {
                 }
             }
         }
-        return det;
-    }
+
+        // add noise
+        for (int i = 0; i < nr; i++) {
+            if (rnd.nextDouble() < pnoise) {
+                double photonAngle = rnd.nextDouble() * Math.PI;
+                double delta = (photonAngle + detAngle);
+                double p = Math.cos(delta) * eff;
+
+                if (p > 0) {
+                    det[i] = true;
+                }
+                }
+            }
+            return det;
+        }
+
+    
 
     private void simpleWindowTest() {
         /* We chose probabilities that will lead to J < 0 */
 
-        double pa1 = 0.85;
+       
+        double effa = efficiency;
+        double effb = efficiency * 0.8;
+        double pa1 = 0.9;
         double pa2 = 0.4;
-        double pb1 = 0.9;
+        double pb1 = 0.8;
         double pb2 = 0.1;
 
         /* the joint probabilities that determine J */
@@ -153,6 +173,7 @@ public class WindowMixedTest {
         out += "\np(detection), " + pa1 + ", " + pa2 + ", " + pb1 + ", " + pb2;
         out += ",,,uncertainty, " + uncertainty;
         out += "\nprobability, p11(PP), p12(P0), p21(0P), p22(PP)";
+          out += ",,,noise, " + pnoise;
         out += "\n, " + round(p11, 6) + ", " + round(p12, 6) + ", " + round(p21, 6) + ", " + round(p22, 6);
         out += "\n\np11 - p12 - p21 - p22 = " + round(jloc, 6);
         out += "\n" + round(p11, 6) + " - " + round(p12, 6) + " - " + round(p21, 6) + " - " + round(p22, 6) + " = " + round(jloc, 6);
@@ -171,23 +192,23 @@ public class WindowMixedTest {
             int c12 = 0;
             int c21 = 0;
             int c22 = 0;
-            
-            int tota1= 0;
-            int tota2= 0;
-            int totb1= 0;
-            int totb2= 0; 
-            
-            int tot11=0;
-            int tot12 =0;
+
+            int tota1 = 0;
+            int tota2 = 0;
+            int totb1 = 0;
+            int totb2 = 0;
+
+            int tot11 = 0;
+            int tot12 = 0;
             int tot21 = 0;
             int tot22 = 0;
-            
+
             for (int trial = 0; trial < nrtrials; trial++) {
                 /* We create multiple parts, because we cannot reuse a measurement in practice! */
                 boolean choiceA1 = rnd.nextDouble() < 0.5;
-                boolean[] detA = createDetectionStream(choiceA1 ? a1 : a2, window, trial);
+                boolean[] detA = createDetectionStream(choiceA1 ? a1 : a2, window, trial, effa);
                 boolean choiceB1 = rnd.nextDouble() < 0.5;
-                boolean[] detB = createDetectionStream(choiceB1 ? b1 : b2, window, trial);
+                boolean[] detB = createDetectionStream(choiceB1 ? b1 : b2, window, trial, effb);
 
                 int pp = countCoincidences(window, 1, 1, detA, detB);
                 int pz = countCoincidences(window, 1, 0, detA, detB);
@@ -195,14 +216,20 @@ public class WindowMixedTest {
                 int zz = countCoincidences(window, 0, 0, detA, detB);
                 // test: sum shold be 1
                 int sanity = pp + pz + zp + zz;
-                if (sanity !=1) {
-                    p("Sanity test failed, total should be 1");
+                if (sanity != 1) {
+                    //    p("Sanity test failed, total should be 1");
                 }
-                if (choiceA1) tota1++;
-                else tota2++;
-                 if (choiceB1) totb1++;
-                else totb2++;
-                 
+                if (choiceA1) {
+                    tota1++;
+                } else {
+                    tota2++;
+                }
+                if (choiceB1) {
+                    totb1++;
+                } else {
+                    totb2++;
+                }
+
                 if (choiceA1 && choiceB1) {
                     c11 += pp;
                     tot11++;
@@ -224,11 +251,11 @@ public class WindowMixedTest {
             long counts = c11 + c12 + c22 + c21;
             String st = window + ", " + c11 + ", " + c12 + ", " + c21 + ", " + c22 + ", " + j + ",, " + counts;
             st += ", " + format(c11, tot11) + ", " + format(c12, tot12) + ", " + format(c21, tot21) + ", " + format(c22, tot22) + ", " + format(j, counts);
-            st += ", "+tota1+", "+tota2+", "+totb1+", "+totb2;
+            st += ", " + tota1 + ", " + tota2 + ", " + totb1 + ", " + totb2;
             out += st + "\n";
             p(st);
         }
-        writeStringToFile(new File("stream_u" + uncertainty + "_e" + efficiency + "_n" + nrtrials + "_double_" + acceptDoubleCounts + ".csv"), out, false);
+        writeStringToFile(new File("stream_n"+pnoise+"_u" + uncertainty + "_e" + efficiency + "_n" + nrtrials + "_double_" + acceptDoubleCounts + "_2.csv"), out, false);
         p(out);
     }
 
@@ -240,10 +267,11 @@ public class WindowMixedTest {
     public static void main(String[] args) {
         WindowMixedTest s = new WindowMixedTest();
 
-        long seed = 1234;
-        int trials = 10000;
-        double efficiency = 0.1;
+        long seed = 5555;
+        int trials = 100000;
+        double efficiency = 0.01;
         int uncertainty = 2;
+        double noise = 1.0;
         if (args != null && args.length > 1) {
             for (int i = 0; i + 1 < args.length; i += 2) {
                 String key = args[i].toUpperCase();
@@ -263,7 +291,13 @@ public class WindowMixedTest {
                     } catch (Exception ex) {
                         p("Could not convert " + value + " to int. Try something like 10000");
                     }
-                } else if (key.startsWith("E")) {
+                } else if (key.startsWith("N")) {
+                    try {
+                        noise = Double.parseDouble(value);
+                    } catch (Exception ex) {
+                        p("Could not convert " + value + " to double. Try something like 1.1");
+                    }
+                 } else if (key.startsWith("E")) {
                     try {
                         efficiency = Double.parseDouble(value);
                     } catch (Exception ex) {
@@ -283,6 +317,7 @@ public class WindowMixedTest {
         s.nrtrials = trials;
         s.efficiency = efficiency;
         s.uncertainty = uncertainty;
+        s.pnoise = noise;
         rnd.setSeed(seed);
         s.simpleWindowTest();
 
